@@ -13,9 +13,9 @@ import LoadingScreen   from './components/LoadingScreen';
 import StarBackground  from './components/StarBackground';
 
 function App() {
-  const [loading,    setLoading]    = useState(true);
-  const [booted,     setBooted]     = useState(false);
-  const [starSpeed,  setStarSpeed]  = useState(0.2);
+  const [loading,   setLoading]   = useState(true);
+  const [booted,    setBooted]    = useState(false);
+  const [starSpeed, setStarSpeed] = useState(0.2);
 
   useEffect(() => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -39,25 +39,29 @@ function App() {
     <div className="bg-[#02030A] min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       <StarBackground speed={starSpeed} />
 
-      <motion.div
-        animate={{ opacity: booted ? 1 : 0 }}
-        transition={{ duration: 1.2, ease: 'easeOut' }}
-        style={{ pointerEvents: booted ? 'auto' : 'none' }}
-      >
-        <ScrollProgress />
-        <Navbar visible={booted} />
+      {/* FIX: Only mount heavy content after booted — prevents GPU contention
+          with the PS5 video decode during the loading sequence */}
+      {booted && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        >
+          <ScrollProgress />
+          <Navbar visible={booted} />
 
-        <main className="w-full overflow-hidden">
-          <Hero />
-          <About />
-          <Skills />
-          <Experience />
-          <Projects />
-          <Achievements />
-        </main>
+          <main className="w-full overflow-hidden">
+            <Hero />
+            <About />
+            <Skills />
+            <Experience />
+            <Projects />
+            <Achievements />
+          </main>
 
-        <Footer />
-      </motion.div>
+          <Footer />
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {loading && (
