@@ -14,7 +14,7 @@ import StarBackground  from './components/StarBackground';
 
 function App() {
   const [loading,    setLoading]    = useState(true);
-  const [booted,     setBooted]     = useState(false);   // controls home fade-in
+  const [booted,     setBooted]     = useState(false);
   const [starSpeed,  setStarSpeed]  = useState(0.2);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ function App() {
   }, []);
 
   const handleReveal = () => {
-    setBooted(true); // start home fade-in while particles are still on top
+    setBooted(true);
   };
 
   const handleComplete = () => {
@@ -39,14 +39,13 @@ function App() {
     <div className="bg-[#02030A] min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
       <StarBackground speed={starSpeed} />
 
-      {/* ── Home content sits underneath loader so it fades in behind particles ── */}
       <motion.div
         animate={{ opacity: booted ? 1 : 0 }}
         transition={{ duration: 1.2, ease: 'easeOut' }}
         style={{ pointerEvents: booted ? 'auto' : 'none' }}
       >
         <ScrollProgress />
-        <Navbar />
+        <Navbar visible={booted} />
 
         <main className="w-full overflow-hidden">
           <Hero />
@@ -60,7 +59,6 @@ function App() {
         <Footer />
       </motion.div>
 
-      {/* ── PS5 Loader on top — dissolves via golden particles ── */}
       <AnimatePresence>
         {loading && (
           <LoadingScreen
