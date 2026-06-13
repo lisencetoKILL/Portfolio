@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar          from './components/Navbar';
 import Hero            from './components/Hero';
@@ -12,9 +13,14 @@ import LoadingScreen   from './components/LoadingScreen';
 import StarBackground  from './components/StarBackground';
 
 function App() {
-  const [loading,   setLoading]   = useState(true);
-  const [booted,    setBooted]    = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === '/home';
+
+  const [loading, setLoading] = useState(!isHomePage);
+  const [booted, setBooted] = useState(isHomePage);
   const [starSpeed, setStarSpeed] = useState(0.2);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -28,6 +34,9 @@ function App() {
 
   const handleReveal = () => {
     setBooted(true);
+    if (location.pathname === '/') {
+      navigate('/home', { replace: true });
+    }
   };
 
   const handleComplete = () => {
@@ -49,13 +58,18 @@ function App() {
           <ScrollProgress />
           <Navbar visible={booted} />
 
-          <main className="w-full overflow-hidden">
-            <Hero />
-            <Skills />
-            <Experience />
-            <Projects />
-            <Achievements />
-          </main>
+          <Routes>
+            <Route path="/home" element={
+              <main className="w-full overflow-hidden">
+                <Hero />
+                <Skills />
+                <Experience />
+                <Projects />
+                <Achievements />
+              </main>
+            } />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+          </Routes>
 
           <Footer />
         </motion.div>
