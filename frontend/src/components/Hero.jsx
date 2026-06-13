@@ -1,682 +1,443 @@
-// Hero.jsx — Singularity Core
-// Deep space golden energy hero for Jay Makwana's portfolio
-// Stack: React + TailwindCSS + Framer Motion
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-} from 'framer-motion';
-import { Github, Linkedin, Mail } from 'lucide-react';
+const PALETTE = {
+  bg0: '#030712',
+  bg1: '#050B18',
+  bg2: '#071426',
+  navy: '#0A1424',
+  blueGray: '#41566D',
+  charcoal: '#1A232F',
+  ivory: '#D9D8D2',
+  accent: '#4DA3FF',
+  white: '#FFFFFF',
+};
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const MODULES = [
-  { id: 'projects',    label: 'PROJECT ARCHIVE',   sub: '12 SELECTED OPERATIONS' },
-  { id: 'experience',  label: 'SYSTEM EXPERIENCE',  sub: '4+ YEARS DEPLOYED'       },
-  { id: 'skills',      label: 'TECH STACK',          sub: 'FULL-SPECTRUM CAPABILITY' },
-  { id: 'contact',     label: 'CONTACT CHANNEL',     sub: 'OPEN TRANSMISSION'       },
+const labels = [
+  { text: 'ORBIT 01', className: 'top-6 left-6 md:top-8 md:left-8' },
+  { text: 'PORTFOLIO V3', className: 'top-6 right-6 md:top-8 md:right-8 text-right' },
+  { text: 'TRANSMISSION ACTIVE', className: 'bottom-8 right-6 md:right-8 text-right' },
 ];
 
-const SOCIALS = [
-  { href: 'https://github.com/jaypmakwana',       icon: Github,   label: 'GitHub'   },
-  { href: 'https://linkedin.com/in/jaypmakwana',  icon: Linkedin, label: 'LinkedIn' },
-  { href: 'mailto:jaypmakwana007@gmail.com',      icon: Mail,     label: 'Email'    },
-];
+function useParallax() {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 60, damping: 20, mass: 1 });
+  const sy = useSpring(y, { stiffness: 60, damping: 20, mass: 1 });
 
-const GOLD        = '#F3E5AB';
-const GOLD_BRIGHT = 'rgba(255,214,90,1)';
-const GOLD_MID    = 'rgba(255,214,90,0.5)';
-const GOLD_DIM    = 'rgba(255,214,90,0.15)';
-const GOLD_FAINT  = 'rgba(255,214,90,0.06)';
+  useEffect(() => {
+    const move = (e) => {
+      x.set((e.clientX / window.innerWidth - 0.5) * 22);
+      y.set((e.clientY / window.innerHeight - 0.5) * 16);
+    };
+    window.addEventListener('mousemove', move);
+    return () => window.removeEventListener('mousemove', move);
+  }, [x, y]);
 
-// ─── Starfield Canvas ─────────────────────────────────────────────────────────
-// Tiny white/warm stars with slow drift. Separate from golden dust layer.
+  return { sx, sy };
+}
 
-const StarCanvas = () => {
+function StarField() {
   const ref = useRef(null);
 
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let w = (canvas.width  = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
     let raf;
+    let w = 0;
+    let h = 0;
+    let stars = [];
+    let events = [];
+    let pointerX = 0;
+    let pointerY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let intro = 0;
+    let frame = 0;
 
-    const stars = Array.from({ length: 160 }, () => ({
-      x:     Math.random() * w,
-      y:     Math.random() * h,
-      r:     0.2 + Math.random() * 0.9,
-      vx:    (Math.random() - 0.5) * 0.04,
-      vy:    (Math.random() - 0.5) * 0.04,
-      alpha: 0.04 + Math.random() * 0.28,
-      phase: Math.random() * Math.PI * 2,
-      spd:   0.002 + Math.random() * 0.004,
-    }));
-
-    const resize = () => {
-      w = canvas.width  = window.innerWidth;
+    const build = () => {
+      w = canvas.width = window.innerWidth;
       h = canvas.height = window.innerHeight;
+      const total = Math.min(1800, Math.floor((w * h) / 1200));
+      stars = Array.from({ length: total }, (_, i) => {
+        const ratio = i / total;
+        const type = ratio < 0.8 ? 'tiny' : ratio < 0.95 ? 'mid' : 'bright';
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: type === 'tiny' ? Math.random() * 0.65 + 0.15 : type === 'mid' ? Math.random() * 0.8 + 0.7 : Math.random() * 1.2 + 1.2,
+          a: type === 'tiny' ? Math.random() * 0.35 + 0.12 : type === 'mid' ? Math.random() * 0.42 + 0.2 : Math.random() * 0.35 + 0.45,
+          p: type === 'tiny' ? 0.04 : type === 'mid' ? 0.1 : 0.18,
+          phase: Math.random() * Math.PI * 2,
+          twinkle: type === 'bright' ? Math.random() * 0.018 + 0.01 : Math.random() * 0.008 + 0.003,
+        };
+      });
+      events = [];
     };
-    window.addEventListener('resize', resize);
+
+    const onMove = (e) => {
+      pointerX = (e.clientX / w - 0.5) * 10;
+      pointerY = (e.clientY / h - 0.5) * 8;
+    };
+
+    const spawnEvent = () => {
+      const roll = Math.random();
+      if (roll < 0.55) {
+        events.push({
+          type: 'shooting',
+          x: Math.random() * w * 0.7,
+          y: Math.random() * h * 0.45,
+          vx: 10 + Math.random() * 6,
+          vy: 3 + Math.random() * 2,
+          life: 0,
+          max: 28 + Math.random() * 12,
+        });
+      } else {
+        events.push({
+          type: 'glint',
+          x: Math.random() * w,
+          y: Math.random() * h * 0.55,
+          life: 0,
+          max: 80 + Math.random() * 40,
+          size: 0.8 + Math.random() * 1.4,
+        });
+      }
+    };
+
+    const drawEvents = () => {
+      events = events.filter((e) => e.life < e.max);
+      events.forEach((e) => {
+        e.life += 1;
+        const t = e.life / e.max;
+        if (e.type === 'shooting') {
+          const x = e.x + e.vx * e.life;
+          const y = e.y + e.vy * e.life;
+          const alpha = Math.sin(t * Math.PI) * 0.35;
+          ctx.strokeStyle = `rgba(220,235,255,${alpha})`;
+          ctx.lineWidth = 1.1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 42, y - 14);
+          ctx.stroke();
+        } else {
+          const alpha = Math.sin(t * Math.PI) * 0.25;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(210,230,255,${alpha})`;
+          ctx.fill();
+        }
+      });
+    };
 
     const draw = () => {
+      frame += 1;
       ctx.clearRect(0, 0, w, h);
-      for (const s of stars) {
-        s.phase += s.spd;
-        s.x     += s.vx;
-        s.y     += s.vy;
-        if (s.x < 0) s.x = w;
-        if (s.x > w) s.x = 0;
-        if (s.y < 0) s.y = h;
-        if (s.y > h) s.y = 0;
-        const a = s.alpha * (0.5 + 0.5 * Math.sin(s.phase));
+
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, PALETTE.bg2);
+      bg.addColorStop(0.48, PALETTE.bg1);
+      bg.addColorStop(1, PALETTE.bg0);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      currentX += (pointerX - currentX) * 0.028;
+      currentY += (pointerY - currentY) * 0.028;
+      intro = Math.min(1, intro + 0.008);
+
+      stars.forEach((star) => {
+        star.phase += star.twinkle;
+        const alpha = star.a * (0.78 + Math.sin(star.phase) * 0.22) * intro;
+        const x = star.x + currentX * star.p;
+        const y = star.y + currentY * star.p;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        // Warm white-gold tint for stars
-        ctx.fillStyle = `rgba(255,245,220,${a})`;
+        ctx.arc(x, y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(235,243,255,${alpha})`;
         ctx.fill();
-      }
+      });
+
+      const haze = ctx.createRadialGradient(w * 0.52, h * 0.7, 0, w * 0.52, h * 0.7, w * 0.6);
+      haze.addColorStop(0, 'rgba(77,163,255,0.05)');
+      haze.addColorStop(0.45, 'rgba(77,163,255,0.02)');
+      haze.addColorStop(1, 'rgba(77,163,255,0)');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, 0, w, h);
+
+      if (frame % (900 + Math.floor(Math.random() * 800)) === 0 && events.length < 3) spawnEvent();
+      drawEvents();
       raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
 
+    build();
+    draw();
+    window.addEventListener('resize', build);
+    window.addEventListener('mousemove', onMove);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', build);
+      window.removeEventListener('mousemove', onMove);
     };
   }, []);
 
+return <canvas ref={ref} className="absolute inset-0 h-full w-full" style={{ zIndex: 0 }} />;
+}
+
+function GasGiant() {
   return (
-    <canvas
-      ref={ref}
-      className="absolute inset-0 pointer-events-none"
-      style={{ opacity: 0.9 }}
-    />
-  );
-};
-
-// ─── Cosmic Dust Canvas ───────────────────────────────────────────────────────
-// Faint golden particles floating slowly upward — distinct from stars.
-
-const CosmicDustCanvas = () => {
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let w = (canvas.width  = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-    let raf;
-
-    const dust = Array.from({ length: 55 }, () => ({
-      x:     Math.random() * w,
-      y:     Math.random() * h,
-      r:     0.4 + Math.random() * 1.1,
-      vy:    -(0.06 + Math.random() * 0.18), // upward drift
-      vx:    (Math.random() - 0.5) * 0.05,
-      alpha: 0.02 + Math.random() * 0.1,
-      phase: Math.random() * Math.PI * 2,
-      spd:   0.003 + Math.random() * 0.006,
-    }));
-
-    const resize = () => {
-      w = canvas.width  = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', resize);
-
-    const draw = () => {
-      ctx.clearRect(0, 0, w, h);
-      for (const d of dust) {
-        d.phase += d.spd;
-        d.x     += d.vx;
-        d.y     += d.vy;
-        // Wrap: re-spawn at bottom when particle exits top
-        if (d.y < -4) { d.y = h + 4; d.x = Math.random() * w; }
-        if (d.x < 0) d.x = w;
-        if (d.x > w) d.x = 0;
-        const a = d.alpha * (0.5 + 0.5 * Math.sin(d.phase));
-        ctx.beginPath();
-        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,214,90,${a})`;
-        ctx.fill();
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    raf = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={ref}
-      className="absolute inset-0 pointer-events-none"
-      style={{ opacity: 1 }}
-    />
-  );
-};
-
-// ─── Singularity Core ─────────────────────────────────────────────────────────
-// Central golden energy sphere with breathing animation + orbital rings.
-
-const OrbitParticle = ({ angle, radius, duration, size = 2 }) => (
-  <motion.div
-    className="absolute rounded-full pointer-events-none"
-    style={{
-      width: size,
-      height: size,
-      top: '50%',
-      left: '50%',
-      background: GOLD_BRIGHT,
-      boxShadow: `0 0 6px rgba(255,214,90,0.6)`,
-      opacity: 0.35,
-    }}
-    animate={{
-      x: [
-        Math.cos((angle * Math.PI) / 180) * radius - size / 2,
-        Math.cos(((angle + 360) * Math.PI) / 180) * radius - size / 2,
-      ],
-      y: [
-        Math.sin((angle * Math.PI) / 180) * radius - size / 2,
-        Math.sin(((angle + 360) * Math.PI) / 180) * radius - size / 2,
-      ],
-    }}
-    transition={{ duration, repeat: Infinity, ease: 'linear' }}
-  />
-);
-
-const SingularityCore = () => (
-  <div
-    className="absolute pointer-events-none"
-    style={{
-      top: '50%', left: '50%',
-      transform: 'translate(-50%, -52%)',
-      width: 500, height: 500,
-    }}
-  >
-    {/* Outermost ambient haze */}
     <motion.div
-      className="absolute inset-0 rounded-full"
+      initial={{ opacity: 0, y: 34, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: 0.45, duration: 1.15, ease: [0.16, 1, 0.3, 1] }}
+      className="pointer-events-none absolute left-1/2 top-[78%] z-[2] h-[72vw] w-[72vw] min-h-[620px] min-w-[620px] -translate-x-1/2 rounded-full md:top-[79%] md:h-[56vw] md:w-[56vw] lg:h-[48vw] lg:w-[48vw]"
       style={{
-        background: `radial-gradient(circle, rgba(255,214,90,0.05) 0%, rgba(255,214,90,0.02) 45%, transparent 70%)`,
-        filter: 'blur(12px)',
+        background: `
+          radial-gradient(circle at 50% 43%, rgba(255,255,255,0.04), transparent 22%),
+          radial-gradient(circle at 50% 36%, rgba(77,163,255,0.08), transparent 30%),
+          linear-gradient(180deg,
+            rgba(217,216,210,0.80) 0%,
+            rgba(123,136,151,0.82) 8%,
+            rgba(57,73,91,0.95) 16%,
+            rgba(26,35,47,1) 24%,
+            rgba(69,84,101,0.92) 31%,
+            rgba(20,29,42,1) 39%,
+            rgba(90,106,121,0.85) 47%,
+            rgba(17,24,35,1) 55%,
+            rgba(74,89,104,0.82) 64%,
+            rgba(15,21,31,1) 72%,
+            rgba(52,65,79,0.85) 80%,
+            rgba(7,12,20,1) 100%)
+        `,
+        boxShadow: '0 0 120px rgba(77,163,255,0.12), 0 0 220px rgba(77,163,255,0.08)',
       }}
-      animate={{ scale: [1, 1.06, 1], opacity: [0.6, 1, 0.6] }}
-      transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    {/* Core glow — the singularity body */}
-    <motion.div
-      className="absolute rounded-full"
-      style={{
-        inset: 130,
-        background: `radial-gradient(
-          circle,
-          rgba(255,214,90,0.25),
-          rgba(255,214,90,0.10),
-          rgba(255,214,90,0.03),
-          transparent
-        )`,
-        filter: 'blur(4px)',
-      }}
-      animate={{ scale: [1, 1.05, 1] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    {/* Inner bright nucleus */}
-    <motion.div
-      className="absolute rounded-full"
-      style={{
-        inset: 218,
-        background: `radial-gradient(circle, rgba(255,236,160,0.45), rgba(255,214,90,0.2), transparent)`,
-        filter: 'blur(2px)',
-      }}
-      animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
-      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    {/* Pulse ring — outer */}
-    <motion.div
-      className="absolute rounded-full"
-      style={{
-        inset: 90,
-        border: `1px solid rgba(255,214,90,0.08)`,
-      }}
-      animate={{ scale: [1, 1.14, 1], opacity: [0.4, 0, 0.4] }}
-      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    {/* Pulse ring — inner */}
-    <motion.div
-      className="absolute rounded-full"
-      style={{
-        inset: 140,
-        border: `1px solid rgba(255,214,90,0.1)`,
-      }}
-      animate={{ scale: [1, 1.18, 1], opacity: [0.35, 0, 0.35] }}
-      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }}
-    />
-
-    {/* Orbiting particles — slow gravity paths */}
-    <OrbitParticle angle={0}   radius={210} duration={90}  size={2}   />
-    <OrbitParticle angle={120} radius={210} duration={90}  size={1.5} />
-    <OrbitParticle angle={240} radius={210} duration={90}  size={2}   />
-    <OrbitParticle angle={60}  radius={178} duration={110} size={1.4} />
-    <OrbitParticle angle={200} radius={178} duration={110} size={1.4} />
-    <OrbitParticle angle={300} radius={155} duration={130} size={1.2} />
-    <OrbitParticle angle={80}  radius={155} duration={130} size={1.2} />
-    <OrbitParticle angle={160} radius={195} duration={75}  size={1.6} />
-  </div>
-);
-
-// ─── Magnetic Cursor Hook ─────────────────────────────────────────────────────
-
-const useMagnet = (strength = 0.3) => {
-  const x  = useMotionValue(0);
-  const y  = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 200, damping: 18 });
-  const sy = useSpring(y, { stiffness: 200, damping: 18 });
-
-  const onMove = useCallback((e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-    x.set((e.clientX - cx) * strength);
-    y.set((e.clientY - cy) * strength);
-  }, [x, y, strength]);
-
-  const onLeave = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
-
-  return { sx, sy, onMove, onLeave };
-};
-
-// ─── Interface Module Card ────────────────────────────────────────────────────
-
-const ModuleCard = ({ mod, index }) => {
-  const { sx, sy, onMove, onLeave } = useMagnet(0.25);
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <motion.a
-      href={`#${mod.id}`}
-      className="relative block overflow-hidden rounded-sm cursor-pointer select-none"
-      style={{ x: sx, y: sy }}
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        delay: 2.8 + index * 0.14,
-        duration: 1,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      whileHover={{ scale: 1.04, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-      whileTap={{ scale: 0.97 }}
-      onMouseMove={onMove}
-      onMouseLeave={() => { onLeave(); setHovered(false); }}
-      onMouseEnter={() => setHovered(true)}
     >
-      <div
-        className="relative px-5 py-4 flex flex-col gap-1"
-        style={{
-          background: hovered
-            ? 'rgba(255,214,90,0.04)'
-            : 'rgba(255,255,255,0.02)',
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
-          border: `1px solid ${hovered ? 'rgba(255,214,90,0.5)' : GOLD_DIM}`,
-          boxShadow: hovered ? '0 0 25px rgba(255,214,90,0.2)' : 'none',
-          transition: 'border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease',
-          minWidth: 148,
-        }}
-      >
-        {/* Top accent line */}
-        <motion.div
-          className="absolute top-0 left-0 right-0 h-[1px]"
-          animate={{
-            background: hovered
-              ? `linear-gradient(90deg, transparent, rgba(255,214,90,0.6), transparent)`
-              : `linear-gradient(90deg, transparent, rgba(255,214,90,0.08), transparent)`,
-          }}
-          transition={{ duration: 0.4 }}
-        />
-
-        {/* Label */}
-        <span
-          className="font-mono text-[10px] tracking-[0.3em] uppercase"
-          style={{ color: hovered ? GOLD : 'rgba(200,190,160,0.65)' }}
-        >
-          {mod.label}
-        </span>
-
-        {/* Sub text */}
-        <span
-          className="font-mono text-[8.5px] tracking-[0.22em]"
-          style={{ color: 'rgba(160,148,110,0.55)' }}
-        >
-          {mod.sub}
-        </span>
-
-        {/* Hover shimmer */}
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255,214,90,0.04) 0%, transparent 60%)',
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Bottom glow on hover */}
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full pointer-events-none"
-              style={{
-                width: 60, height: 1,
-                background: 'rgba(255,214,90,0.7)',
-                boxShadow: '0 0 14px rgba(255,214,90,0.5)',
-                filter: 'blur(0.5px)',
-              }}
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              exit={{ opacity: 0, scaleX: 0 }}
-              transition={{ duration: 0.35 }}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.a>
-  );
-};
-
-// ─── Side Dock ────────────────────────────────────────────────────────────────
-
-const DockItem = ({ social, index }) => {
-  const Icon = social.icon;
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <motion.div
-      className="relative flex items-center"
-      initial={{ opacity: 0, x: -14 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 3.2 + index * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <AnimatePresence>
-        {hovered && (
-          <motion.span
-            className="absolute left-10 font-mono text-[9px] tracking-[0.28em] uppercase whitespace-nowrap pointer-events-none"
-            style={{ color: 'rgba(255,214,90,0.6)' }}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -6 }}
-            transition={{ duration: 0.2 }}
-          >
-            {social.label}
-          </motion.span>
-        )}
-      </AnimatePresence>
-
-      <motion.a
-        href={social.href}
-        target="_blank"
-        rel="noreferrer"
-        className="relative flex items-center justify-center rounded-sm"
-        style={{
-          width: 34, height: 34,
-          background: hovered ? 'rgba(255,214,90,0.07)' : 'rgba(255,255,255,0.025)',
-          border: `1px solid ${hovered ? 'rgba(255,214,90,0.3)' : 'rgba(255,214,90,0.08)'}`,
-          backdropFilter: 'blur(12px)',
-          color: hovered ? GOLD : 'rgba(150,140,100,0.7)',
-          transition: 'all 0.3s ease',
-          boxShadow: hovered ? '0 0 14px rgba(255,214,90,0.18)' : 'none',
-        }}
-        whileHover={{ scale: 1.14, y: -2 }}
-        whileTap={{ scale: 0.93 }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <Icon size={14} />
-      </motion.a>
-    </motion.div>
-  );
-};
-
-const SideDock = () => (
-  <motion.div
-    className="fixed left-6 top-1/2 -translate-y-1/2 z-30 hidden md:flex flex-col items-center gap-3"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ delay: 3.1, duration: 1 }}
-  >
-    <div
-      className="w-[1px] h-14"
-      style={{ background: 'linear-gradient(to bottom, transparent, rgba(255,214,90,0.12))' }}
-    />
-    {SOCIALS.map((s, i) => (
-      <DockItem key={s.label} social={s} index={i} />
-    ))}
-    <div
-      className="w-[1px] h-14"
-      style={{ background: 'linear-gradient(to top, transparent, rgba(255,214,90,0.12))' }}
-    />
-  </motion.div>
-);
-
-// ─── HUD Corners ──────────────────────────────────────────────────────────────
-
-const HUDCorners = () => {
-  const corners = [
-    'top-5 left-5 border-t border-l',
-    'top-5 right-5 border-t border-r',
-    'bottom-5 left-5 border-b border-l',
-    'bottom-5 right-5 border-b border-r',
-  ];
-  return (
-    <>
-      {corners.map((c, i) => (
-        <motion.div
-          key={i}
-          className={`absolute w-6 h-6 pointer-events-none ${c}`}
-          style={{ borderColor: 'rgba(255,214,90,0.12)' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 + i * 0.08, duration: 0.8 }}
-        />
-      ))}
-    </>
-  );
-};
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
-
-const Hero = () => (
-  <div
-    id="home"
-    className="relative w-full min-h-screen overflow-hidden flex flex-col items-center justify-center"
-    style={{ background: '#000000' }}
-  >
-    {/* ── Layer 1: Starfield ── */}
-    <StarCanvas />
-
-    {/* ── Layer 2: Cosmic golden dust ── */}
-    <CosmicDustCanvas />
-
-    {/* ── Layer 3: Deep space radial ambient ── */}
-    <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        background: `radial-gradient(ellipse 80% 60% at 50% 50%,
-          rgba(255,214,90,0.03) 0%,
-          rgba(120,90,20,0.015) 40%,
-          transparent 72%
-        )`,
-      }}
-    />
-
-    {/* ── Singularity Core (behind text) ── */}
-    <SingularityCore />
-
-    {/* ── Large center radial glow ── */}
-    <motion.div
-      className="absolute pointer-events-none"
-      style={{
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -52%)',
-        width: 680, height: 480,
-        background: `radial-gradient(ellipse at center,
-          rgba(255,214,90,0.04) 0%,
-          rgba(180,140,40,0.015) 45%,
-          transparent 72%
-        )`,
-        filter: 'blur(6px)',
-      }}
-      animate={{ opacity: [0.6, 1, 0.6] }}
-      transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    {/* ── HUD corners ── */}
-    <HUDCorners />
-
-    {/* ── Side dock ── */}
-    <SideDock />
-
-    {/* ── Bottom system bar ── */}
-    <motion.div
-      className="absolute bottom-5 left-0 right-0 flex justify-between px-8 pointer-events-none z-20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 3.4, duration: 0.9 }}
-    >
-      <span className="font-mono text-[8px] tracking-[0.36em] uppercase"
-        style={{ color: 'rgba(120,100,50,0.5)' }}>
-        SINGULARITY.CORE
-      </span>
-      <motion.span
-        className="font-mono text-[8px] tracking-[0.36em] uppercase"
-        style={{ color: 'rgba(255,214,90,0.3)' }}
-        animate={{ opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 3, repeat: Infinity }}
-      >
-        ● SYSTEM ONLINE
-      </motion.span>
-      <span className="font-mono text-[8px] tracking-[0.36em] uppercase"
-        style={{ color: 'rgba(120,100,50,0.5)' }}>
-        JAY MAKWANA
-      </span>
-    </motion.div>
-
-    {/* ── Main content ── */}
-    <div className="relative z-20 flex flex-col items-center text-center px-6 gap-8">
-
-      {/* Identity emergence — name forms from singularity light */}
-      <div className="flex flex-col items-center leading-none gap-2">
-
-        {/* JAY — primary identity */}
-        <motion.h1
-          className="font-light select-none"
-          style={{
-            fontSize: 'clamp(5.5rem, 18vw, 13rem)',
-            lineHeight: 0.88,
-            letterSpacing: '0.12em',
-            color: GOLD,
-            textShadow: `
-              0 0 40px rgba(255,214,90,0.25),
-              0 0 80px rgba(255,214,90,0.1),
-              0 0 120px rgba(255,214,90,0.05)
-            `,
-            fontWeight: 300,
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.0, duration: 1.5, ease: 'easeOut' }}
-        >
-          JAY
-        </motion.h1>
-
-        {/* MAKWANA — secondary identity */}
-        <motion.div
-          className="flex items-center gap-5"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.8, duration: 1.2, ease: 'easeOut' }}
-        >
-          <div
-            className="h-[1px] w-10"
-            style={{ background: `linear-gradient(90deg, transparent, rgba(255,214,90,0.3))` }}
-          />
-          <span
-            className="font-mono uppercase"
-            style={{
-              fontSize: 'clamp(0.55rem, 1.6vw, 0.9rem)',
-              letterSpacing: '0.55em',
-              color: 'rgba(200,180,110,0.55)',
-            }}
-          >
-            MAKWANA
-          </span>
-          <div
-            className="h-[1px] w-10"
-            style={{ background: `linear-gradient(90deg, rgba(255,214,90,0.3), transparent)` }}
-          />
-        </motion.div>
-      </div>
-
-      {/* Mission statement */}
       <motion.div
-        className="flex flex-col items-center gap-0.5"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.2, duration: 1.1, ease: 'easeOut' }}
+        className="absolute inset-0 overflow-hidden rounded-full"
+        animate={{ backgroundPositionX: ['0%', '100%'] }}
+        transition={{ duration: 180, repeat: Infinity, ease: 'linear' }}
+        style={{
+          backgroundImage: `
+            linear-gradient(180deg,
+              transparent 0%,
+              rgba(255,255,255,0.05) 7%,
+              transparent 15%,
+              rgba(255,255,255,0.03) 23%,
+              transparent 31%,
+              rgba(255,255,255,0.04) 40%,
+              transparent 48%,
+              rgba(255,255,255,0.025) 57%,
+              transparent 65%,
+              rgba(255,255,255,0.035) 73%,
+              transparent 83%,
+              rgba(255,255,255,0.025) 92%,
+              transparent 100%)
+          `,
+          backgroundSize: '180% 100%',
+          mixBlendMode: 'screen',
+        }}
+      />
+
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 260, repeat: Infinity, ease: 'linear' }}
+        style={{
+          background: `
+            radial-gradient(ellipse 16% 7% at 60% 40%, rgba(255,255,255,0.045), transparent 72%),
+            radial-gradient(ellipse 22% 9% at 34% 56%, rgba(18,26,38,0.28), transparent 75%),
+            radial-gradient(ellipse 14% 6% at 68% 62%, rgba(255,255,255,0.035), transparent 72%),
+            radial-gradient(ellipse 9% 5% at 44% 46%, rgba(12,18,28,0.34), transparent 75%)
+          `,
+        }}
+      />
+
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        animate={{ x: [0, 18, 0] }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          background: `
+            radial-gradient(circle at 55% 46%, rgba(18,26,38,0.42) 0%, rgba(18,26,38,0.18) 26%, transparent 44%),
+            radial-gradient(circle at 56% 46%, rgba(255,255,255,0.05) 0%, transparent 18%)
+          `,
+          filter: 'blur(1px)',
+        }}
+      />
+
+      <div
+        className="absolute inset-[-3%] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, transparent 61%, rgba(170,210,255,0.10) 67%, rgba(77,163,255,0.18) 72%, transparent 79%)',
+          filter: 'blur(8px)',
+        }}
+      />
+
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 22%, rgba(3,7,18,0.08) 38%, rgba(3,7,18,0.52) 67%, rgba(3,7,18,0.95) 100%)',
+        }}
+      />
+    </motion.div>
+  );
+}
+
+function Satellite() {
+  return (
+    <motion.div
+      className="pointer-events-none absolute z-[3]"
+      initial={{ x: '-12vw', y: '52vh', opacity: 0 }}
+      animate={{
+        x: ['-12vw', '26vw', '58vw', '102vw'],
+        y: ['52vh', '47vh', '44vh', '40vh'],
+        opacity: [0, 0.22, 0.24, 0],
+      }}
+      transition={{
+        duration: 22,
+        times: [0, 0.2, 0.78, 1],
+        repeat: Infinity,
+        repeatDelay: 8,
+        ease: 'linear',
+      }}
+    >
+      <div className="relative h-[10px] w-[28px]">
+        <div className="absolute left-[10px] top-[3px] h-[4px] w-[8px] rounded-full bg-white/35 shadow-[0_0_8px_rgba(255,255,255,0.15)]" />
+        <div className="absolute left-0 top-[2px] h-[6px] w-[10px] rounded-[1px] border border-white/18 bg-white/[0.03]" />
+        <div className="absolute right-0 top-[2px] h-[6px] w-[10px] rounded-[1px] border border-white/18 bg-white/[0.03]" />
+        <div className="absolute left-[13px] top-0 h-[10px] w-px bg-white/20" />
+      </div>
+    </motion.div>
+  );
+}
+
+export default function Hero() {
+  const [ready, setReady] = useState(false);
+  const { sx, sy } = useParallax();
+
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 60);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <section
+      id="home"
+      className="relative flex h-screen min-h-[760px] w-full items-center justify-center overflow-hidden text-white"
+      style={{
+        background: `linear-gradient(180deg, ${PALETTE.bg2} 0%, ${PALETTE.bg1} 48%, ${PALETTE.bg0} 100%)`,
+      }}
+    >
+      <StarField />
+
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{ x: sx, y: sy }}
       >
-        {[
-          'ENGINEERING DIGITAL REALITY',
-          'THROUGH SCALABLE SYSTEMS',
-          'AND IMMERSIVE DESIGN',
-        ].map((line, i) => (
-          <p
-            key={i}
-            className="font-mono uppercase"
-            style={{
-              fontSize: 'clamp(0.5rem, 1.2vw, 0.7rem)',
-              letterSpacing: '0.3em',
-              color: 'rgba(180,160,90,0.35)',
-              fontWeight: 300,
-            }}
-          >
-            {line}
-          </p>
-        ))}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 78% 48% at 50% 76%, rgba(77,163,255,0.08), rgba(77,163,255,0.03) 34%, transparent 66%)',
+          }}
+        />
       </motion.div>
 
-      {/* Interface modules */}
-      <div className="flex flex-wrap justify-center gap-3 mt-1">
-        {MODULES.map((mod, i) => (
-          <ModuleCard key={mod.id} mod={mod} index={i} />
-        ))}
-      </div>
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{ x: sx.get() * 0.22, y: sy.get() * 0.22 }}
+      >
+        <div
+          className="absolute left-1/2 top-[71%] h-[26vh] w-[80vw] -translate-x-1/2 rounded-full"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(214,233,255,0.22) 0%, rgba(141,192,255,0.12) 26%, rgba(77,163,255,0.05) 48%, transparent 72%)',
+            filter: 'blur(34px)',
+          }}
+        />
+      </motion.div>
 
-    </div>
-  </div>
-);
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[2]"
+        style={{ x: sx.get() * 0.35, y: sy.get() * 0.35 }}
+      >
+        <GasGiant />
+      </motion.div>
 
-export default Hero;
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[3]"
+        style={{ x: sx.get() * 0.55, y: sy.get() * 0.55 }}
+      >
+        <Satellite />
+      </motion.div>
+
+      <div className="pointer-events-none absolute inset-0 z-[4] bg-[radial-gradient(circle_at_center,transparent_34%,rgba(3,7,18,0.14)_66%,rgba(3,7,18,0.58)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 z-[4] bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,transparent_18%,transparent_82%,rgba(255,255,255,0.03)_100%)]" />
+
+      {labels.map((item, i) => (
+        <motion.div
+          key={item.text}
+          initial={{ opacity: 0, y: i === 2 ? 10 : -10 }}
+          animate={{ opacity: ready ? 0.42 : 0, y: ready ? 0 : i === 2 ? 10 : -10 }}
+          transition={{ delay: 0.95 + i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className={`pointer-events-none absolute z-[6] font-['Inter',sans-serif] text-[10px] uppercase tracking-[0.38em] text-white/40 ${item.className}`}
+        >
+          {item.text}
+        </motion.div>
+      ))}
+
+      <motion.div
+        className="relative z-[7] flex max-w-[1100px] flex-col items-center px-6 text-center"
+        style={{ x: sx.get() * 0.06, y: sy.get() * 0.06 }}
+      >
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: ready ? 0.8 : 0, y: ready ? 0 : 14 }}
+          transition={{ delay: 1.02, duration: 0.62, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-5 text-[10px] uppercase tracking-[0.42em] text-[#4DA3FF] md:mb-6"
+          style={{ fontFamily: 'Inter, sans-serif' }}
+        >
+          Establishing Orbit
+        </motion.p>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 24, filter: 'blur(10px)' }}
+          animate={{ opacity: ready ? 1 : 0, y: ready ? 0 : 24, filter: ready ? 'blur(0px)' : 'blur(10px)' }}
+          transition={{ delay: 1.18, duration: 0.88, ease: [0.16, 1, 0.3, 1] }}
+          className="font-['Space_Grotesk',sans-serif] text-[clamp(3.5rem,10vw,8.5rem)] font-[700] uppercase leading-[0.92] tracking-[-0.04em] text-white"
+          style={{ textShadow: '0 12px 50px rgba(0,0,0,0.34), 0 0 60px rgba(141,192,255,0.06)' }}
+        >
+          JAY MAKWANA
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: ready ? 0.82 : 0, y: ready ? 0 : 18 }}
+          transition={{ delay: 1.4, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="mt-6 max-w-[760px] text-balance font-['Inter',sans-serif] text-[clamp(1rem,1.6vw,1.35rem)] font-[400] leading-[1.6] text-white/70 md:mt-7"
+        >
+          Building digital experiences for web, mobile and AI.
+        </motion.p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: ready ? 1 : 0, y: ready ? 0 : 20 }}
+        transition={{ delay: 1.72, duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute bottom-9 left-1/2 z-[7] flex -translate-x-1/2 flex-col items-center gap-3 px-4 text-center md:bottom-10"
+      >
+        <p className="max-w-[28ch] text-[11px] uppercase tracking-[0.22em] text-white/55 md:text-[12px]">
+          Everything below started as an empty folder.
+        </p>
+        <motion.div
+          animate={{ y: [0, 7, 0], opacity: [0.55, 1, 0.55] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]"
+        >
+          <ChevronDown size={16} color="rgba(255,255,255,0.75)" />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
