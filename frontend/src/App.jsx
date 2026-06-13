@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Navbar          from './components/Navbar';
 import Hero            from './components/Hero';
-import About           from './components/About';
 import Skills          from './components/Skills';
 import Experience      from './components/Experience';
 import Projects        from './components/Projects';
@@ -52,7 +51,6 @@ function App() {
 
           <main className="w-full overflow-hidden">
             <Hero />
-            <About />
             <Skills />
             <Experience />
             <Projects />
