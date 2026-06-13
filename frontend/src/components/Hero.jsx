@@ -320,13 +320,13 @@ export default function Hero() {
   }, []);
 
   return (
-    <section
-      id="home"
-      className="relative flex h-screen min-h-[760px] w-full items-center justify-center overflow-hidden text-white"
-      style={{
-        background: `linear-gradient(180deg, ${PALETTE.bg2} 0%, ${PALETTE.bg1} 48%, ${PALETTE.bg0} 100%)`,
-      }}
-    >
+<section
+  id="home"
+  className="relative flex h-screen min-h-[760px] w-full items-center justify-center overflow-hidden text-white"
+  style={{
+    background: 'transparent',
+  }}
+>
       <StarField />
 
       <motion.div
