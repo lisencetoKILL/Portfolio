@@ -7,14 +7,14 @@ import React, {
 import { AnimatePresence, motion } from 'framer-motion';
 
 const TL = {
-  logoStart: 400,
-  logoEnd: 6000,
-  envStart: 6300,
-  envEnd: 8800,
+  logoStart:      400,
+  logoEnd:        6000,
+  envStart:       6300,
+  envEnd:         8800,
   particlesStart: 8800,
-  heroStart: 10500,
-  particlesEnd: 11500,
-  unmount: 12000,
+  heroStart:      10500,
+  particlesEnd:   11500,
+  unmount:        12000,
 };
 
 const ENV_LINES = [
@@ -39,39 +39,39 @@ const useAudio = () => {
   }, []);
 
   const playBootHum = useCallback(() => {
-    const ac = getCtx();
+    const ac  = getCtx();
     const dur = 6.0;
-    const osc1 = ac.createOscillator();
+    const osc1  = ac.createOscillator();
     const gain1 = ac.createGain();
     osc1.type = 'sine';
     osc1.frequency.setValueAtTime(52, ac.currentTime);
     osc1.frequency.linearRampToValueAtTime(70, ac.currentTime + dur);
     osc1.detune.value = -8;
     gain1.gain.setValueAtTime(0, ac.currentTime);
-    gain1.gain.linearRampToValueAtTime(0.05, ac.currentTime + 1.2);
+    gain1.gain.linearRampToValueAtTime(0.05,  ac.currentTime + 1.2);
     gain1.gain.linearRampToValueAtTime(0.028, ac.currentTime + dur - 0.8);
-    gain1.gain.linearRampToValueAtTime(0, ac.currentTime + dur);
+    gain1.gain.linearRampToValueAtTime(0,     ac.currentTime + dur);
     const filter = ac.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 180;
     osc1.connect(filter); filter.connect(gain1); gain1.connect(ac.destination);
     osc1.start(ac.currentTime); osc1.stop(ac.currentTime + dur);
 
-    const osc2 = ac.createOscillator();
+    const osc2  = ac.createOscillator();
     const gain2 = ac.createGain();
     osc2.type = 'triangle';
     osc2.frequency.setValueAtTime(220, ac.currentTime);
     osc2.frequency.linearRampToValueAtTime(440, ac.currentTime + dur * 0.7);
-    gain2.gain.setValueAtTime(0, ac.currentTime);
+    gain2.gain.setValueAtTime(0,    ac.currentTime);
     gain2.gain.linearRampToValueAtTime(0.02, ac.currentTime + 2.0);
     gain2.gain.linearRampToValueAtTime(0.01, ac.currentTime + dur - 1.0);
-    gain2.gain.linearRampToValueAtTime(0, ac.currentTime + dur);
+    gain2.gain.linearRampToValueAtTime(0,    ac.currentTime + dur);
     osc2.connect(gain2); gain2.connect(ac.destination);
     osc2.start(ac.currentTime); osc2.stop(ac.currentTime + dur);
   }, [getCtx]);
 
   const playTick = useCallback(() => {
-    const ac = getCtx();
+    const ac  = getCtx();
     const osc = ac.createOscillator();
     const gain = ac.createGain();
     osc.type = 'sine';
@@ -100,17 +100,17 @@ const ParticleVideo = ({ videoRef, opacity, muted }) => (
   />
 );
 
-const ENERGY_DURATION = TL.envStart;           // 6300ms
-const LAST_SPAWN_AT   = ENERGY_DURATION - 1100; // 5200ms
+const ENERGY_DURATION = TL.envStart;
+const LAST_SPAWN_AT   = ENERGY_DURATION - 1100;
 const LAST_TRAVEL_MS  = 900;
 const AMBIENT_COUNT   = 40;
 
 function makeAmbient(canvasW, canvasH) {
   return {
-    x:       Math.random() * canvasW,
-    y:       Math.random() * canvasH,
-    vx:      (Math.random() - 0.5) * 0.35,
-    vy:      (Math.random() - 0.5) * 0.35,
+    x:  Math.random() * canvasW,
+    y:  Math.random() * canvasH,
+    vx: (Math.random() - 0.5) * 0.35,
+    vy: (Math.random() - 0.5) * 0.35,
     wobbleX: Math.random() * Math.PI * 2,
     wobbleY: Math.random() * Math.PI * 2,
     wobbleSpeedX: 0.0008 + Math.random() * 0.0006,
@@ -131,14 +131,12 @@ function makeAmbient(canvasW, canvasH) {
 function makeSwarmParticle(canvasW, canvasH) {
   const cx = canvasW / 2;
   const cy = canvasH / 2;
-  const angle = Math.random() * Math.PI * 2;
+  const angle     = Math.random() * Math.PI * 2;
   const startDist = 200 + Math.random() * 220;
   return {
     isFreeFloat: false,
-    converging: true,
-    cx, cy,
-    angle,
-    startDist,
+    converging:  true,
+    cx, cy, angle, startDist,
     x: cx + Math.cos(angle) * startDist,
     y: cy + Math.sin(angle) * startDist,
     size:     1.4 + Math.random() * 2.2,
@@ -160,22 +158,13 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
     if (!canvas) return;
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
-
     const ambient = Array.from({ length: AMBIENT_COUNT }, () =>
       makeAmbient(canvas.width, canvas.height)
     );
-
-    stateRef.current = {
-      ambient,
-      swarm: [],
-      lastSpawned: false,
-      hitFlash: 0,
-      clickedAt: null,
-    };
+    stateRef.current = { ambient, swarm: [], lastSpawned: false, hitFlash: 0, clickedAt: null };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── CHANGE 1: staggered spawnAt so dots arrive spread across 0–4800ms ──
   useEffect(() => {
     if (!clicked) return;
     const s      = stateRef.current;
@@ -185,29 +174,25 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
     const cy     = canvas.height / 2;
     const now    = performance.now();
     s.clickedAt  = now;
-
     s.ambient.forEach((p, i) => {
-      p.converging  = true;
-      p.startX      = p.x;
-      p.startY      = p.y;
-      const dx      = cx - p.x;
-      const dy      = cy - p.y;
-      p.startDist   = Math.sqrt(dx * dx + dy * dy);
-      p.angle       = Math.atan2(dy, dx);
-      // stagger: spread all 40 dots across 0ms to 4800ms
-      p.spawnAt     = (i / AMBIENT_COUNT) * 4800 + Math.random() * 300;
-      // slow travel: each takes 0.8–1.4s once it starts moving
-      p.travelMs    = 800 + Math.random() * 600;
-      p.cx          = cx;
-      p.cy          = cy;
+      p.converging = true;
+      p.startX     = p.x;
+      p.startY     = p.y;
+      const dx     = cx - p.x;
+      const dy     = cy - p.y;
+      p.startDist  = Math.sqrt(dx * dx + dy * dy);
+      p.angle      = Math.atan2(dy, dx);
+      p.spawnAt    = (i / AMBIENT_COUNT) * 4800 + Math.random() * 300;
+      p.travelMs   = 800 + Math.random() * 600;
+      p.cx         = cx;
+      p.cy         = cy;
     });
   }, [clicked]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
+    const ctx      = canvas.getContext('2d');
     const TARGET_R = 48;
 
     const draw = (now) => {
@@ -215,34 +200,26 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
       if (!s) { rafRef.current = requestAnimationFrame(draw); return; }
 
       const elapsed = s.clickedAt != null ? now - s.clickedAt : null;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!logoVisible) {
-        rafRef.current = requestAnimationFrame(draw);
-        return;
-      }
+      if (!logoVisible) { rafRef.current = requestAnimationFrame(draw); return; }
 
       const cx = canvas.width  / 2;
       const cy = canvas.height / 2;
 
-      // ── CHANGE 3: swarm spawner block REMOVED entirely ──
-
-      /* ── Spawn the ONE final particle ── */
       if (elapsed != null && !s.lastSpawned && elapsed >= LAST_SPAWN_AT) {
         s.lastSpawned = true;
-        const lp      = makeSwarmParticle(canvas.width, canvas.height);
-        lp.spawnAt    = elapsed;
-        lp.travelMs   = LAST_TRAVEL_MS;
-        lp.startDist  = 260;
-        lp.size       = 3.8;
-        lp.g          = 230;
-        lp.b          = 120;
-        lp.isLast     = true;
+        const lp     = makeSwarmParticle(canvas.width, canvas.height);
+        lp.spawnAt   = elapsed;
+        lp.travelMs  = LAST_TRAVEL_MS;
+        lp.startDist = 260;
+        lp.size      = 3.8;
+        lp.g         = 230;
+        lp.b         = 120;
+        lp.isLast    = true;
         s.swarm.push(lp);
       }
 
-      /* ── Hit flash ── */
       if (s.hitFlash > 0) {
         const fa = s.hitFlash;
         const fr = TARGET_R + (1 - fa) * 55;
@@ -257,12 +234,9 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
         s.hitFlash = Math.max(0, s.hitFlash - 0.045);
       }
 
-      /* ── Draw ambient floating dots ── */
       s.ambient.forEach((p, idx) => {
         if (p.converging && elapsed != null) {
           const age = elapsed - p.spawnAt;
-
-          // ── CHANGE 2: if not yet time, keep floating freely ──
           if (age < 0) {
             p.wobbleX += p.wobbleSpeedX * 16;
             p.wobbleY += p.wobbleSpeedY * 16;
@@ -289,7 +263,7 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
             return;
           }
 
-          const ratio = 1 - dist / p.startDist;
+          const ratio  = 1 - dist / p.startDist;
           p.x = p.startX + (p.cx - p.startX) * ratio;
           p.y = p.startY + (p.cy - p.startY) * ratio;
 
@@ -316,12 +290,10 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
           p.wobbleY += p.wobbleSpeedY * 16;
           p.x += p.vx + Math.sin(p.wobbleX) * 0.18;
           p.y += p.vy + Math.sin(p.wobbleY) * 0.18;
-
           if (p.x < -10) p.x = canvas.width  + 10;
           if (p.x > canvas.width  + 10) p.x = -10;
           if (p.y < -10) p.y = canvas.height + 10;
           if (p.y > canvas.height + 10) p.y = -10;
-
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255,${p.g},${p.b},${p.alpha})`;
@@ -329,7 +301,6 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
         }
       });
 
-      /* ── Draw swarm (final particle only) ── */
       if (elapsed != null) {
         for (let i = s.swarm.length - 1; i >= 0; i--) {
           const p   = s.swarm[i];
@@ -383,7 +354,7 @@ const EnergyCanvas = ({ logoVisible, clicked }) => {
           ctx.lineTo(x, y);
           ctx.strokeStyle = grad;
           ctx.lineWidth   = p.size * 1.4 * (0.6 + 0.4 * (1 - eased));
-          ctx.lineCap = 'round';
+          ctx.lineCap     = 'round';
           ctx.stroke();
 
           ctx.beginPath();
@@ -428,15 +399,8 @@ const JMLogo = ({ visible, needsUnlock, onUnlock, clicked }) => (
         exit={{ opacity: 0, transition: { duration: 0.9 } }}
         transition={{ duration: 0.9, ease: 'easeOut' }}
       >
-           {!clicked && [1, 1.35, 1.7].map((scale, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              top: '50%', left: '50%',
-              width: 0, height: 0,
-            }}
-          >
+        {!clicked && [1, 1.35, 1.7].map((scale, i) => (
+          <div key={i} style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0 }}>
             <motion.div
               className="rounded-full border"
               style={{
@@ -575,18 +539,19 @@ const EnvText = ({ visible, visibleLines }) => (
 );
 
 /* ─── LoadingScreen ─── */
-const LoadingScreen = ({ onReveal, onComplete }) => {
+const LoadingScreen = ({ onComplete, onSpeedChange }) => {
   const [timelineTime, setTimelineTime]       = useState(0);
   const [sequenceStarted, setSequenceStarted] = useState(false);
   const [clicked, setClicked]                 = useState(false);
 
-  const videoRef       = useRef(null);
-  const rafRef         = useRef(0);
-  const startRef       = useRef(0);
-  const didRevealRef   = useRef(false);
-  const didCompleteRef = useRef(false);
-  const didBootHumRef  = useRef(false);
-  const didTickRef     = useRef(ENV_LINES.map(() => false));
+  const videoRef         = useRef(null);
+  const rafRef           = useRef(0);
+  const startRef         = useRef(0);
+  const didCompleteRef   = useRef(false);
+  const didBootHumRef    = useRef(false);
+  const didTickRef       = useRef(ENV_LINES.map(() => false));
+  // Track speed milestones so onSpeedChange fires exactly once per stage
+  const speedStageRef    = useRef(0);
 
   const { playBootHum, playTick } = useAudio();
 
@@ -611,24 +576,54 @@ const LoadingScreen = ({ onReveal, onComplete }) => {
 
   useEffect(() => {
     const t = timelineTime;
-    if (t >= TL.heroStart && !didRevealRef.current) {
-      didRevealRef.current = true; onReveal?.();
-    }
+
+    // ── onComplete ──
     if (t >= TL.unmount && !didCompleteRef.current) {
-      didCompleteRef.current = true; onComplete?.();
+      didCompleteRef.current = true;
+      onComplete?.();
     }
+
     if (!sequenceStarted) return;
+
+    // ── Boot hum ──
     if (t >= TL.logoStart && !didBootHumRef.current) {
-      didBootHumRef.current = true; playBootHum();
+      didBootHumRef.current = true;
+      playBootHum();
     }
+
+    // ── Env line ticks ──
     const lineStep = (TL.envEnd - TL.envStart) / (ENV_LINES.length - 1);
     for (let i = 0; i < ENV_LINES.length; i++) {
       const lineTime = TL.envStart + lineStep * i;
       if (t >= lineTime && !didTickRef.current[i]) {
-        didTickRef.current[i] = true; playTick();
+        didTickRef.current[i] = true;
+        playTick();
       }
     }
-  }, [onComplete, onReveal, playBootHum, playTick, sequenceStarted, timelineTime]);
+
+    // ── Star speed ramp (4 stages) ──
+    // Stage 0 → click: idle (0.05, set by App.jsx default)
+    // Stage 1 → logoStart: slow drift begins (0.12)
+    // Stage 2 → envStart: env text phase, slightly faster (0.22)
+    // Stage 3 → particlesStart: particle phase, fast warp feel (0.55)
+    // Stage 4 → heroStart: wind-down back to idle (0.05)
+    if (speedStageRef.current < 1 && t >= TL.logoStart) {
+      speedStageRef.current = 1;
+      onSpeedChange?.(0.12);
+    }
+    if (speedStageRef.current < 2 && t >= TL.envStart) {
+      speedStageRef.current = 2;
+      onSpeedChange?.(0.22);
+    }
+    if (speedStageRef.current < 3 && t >= TL.particlesStart) {
+      speedStageRef.current = 3;
+      onSpeedChange?.(0.55);
+    }
+    if (speedStageRef.current < 4 && t >= TL.heroStart) {
+      speedStageRef.current = 4;
+      onSpeedChange?.(0.05);
+    }
+  }, [onComplete, onSpeedChange, playBootHum, playTick, sequenceStarted, timelineTime]);
 
   useEffect(() => {
     if (!sequenceStarted || timelineTime < TL.particlesStart) return;
@@ -666,19 +661,23 @@ const LoadingScreen = ({ onReveal, onComplete }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" style={{ background: '#000000' }}>
-      <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: veilOpacity }} />
-
+      <div
+        className="absolute inset-0 bg-black pointer-events-none"
+        style={{ opacity: veilOpacity }}
+      />
       <EnergyCanvas logoVisible={logoVisible} clicked={clicked} />
-
       <JMLogo
         visible={logoVisible}
         needsUnlock={!sequenceStarted}
         onUnlock={handleAudioUnlock}
         clicked={clicked}
       />
-
       <EnvText visible={envVisible} visibleLines={visibleLines} />
-      <ParticleVideo videoRef={videoRef} opacity={particleOpacity} muted={!sequenceStarted} />
+      <ParticleVideo
+        videoRef={videoRef}
+        opacity={particleOpacity}
+        muted={!sequenceStarted}
+      />
     </div>
   );
 };

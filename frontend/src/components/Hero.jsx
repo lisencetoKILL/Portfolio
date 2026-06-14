@@ -25,9 +25,9 @@ const SNAPSHOT = [
 ];
 
 const NAV_LABELS = [
-  { text: 'ORBIT 01',           className: 'top-6 left-6 md:top-8 md:left-8' },
-  { text: 'PORTFOLIO V3',       className: 'top-6 right-6 md:top-8 md:right-8 text-right' },
-  { text: 'TRANSMISSION ACTIVE',className: 'bottom-8 right-6 md:right-8 text-right' },
+  { text: 'ORBIT 01',            className: 'top-6 left-6 md:top-8 md:left-8' },
+  { text: 'PORTFOLIO V3',        className: 'top-6 right-6 md:top-8 md:right-8 text-right' },
+  { text: 'TRANSMISSION ACTIVE', className: 'bottom-8 right-6 md:right-8 text-right' },
 ];
 
 const fadeUp = (delay = 0) => ({
@@ -49,7 +49,7 @@ function StarField() {
 
     const build = () => {
       w = canvas.width  = window.innerWidth;
-      h = canvas.height = canvas.parentElement.offsetHeight; // full section height
+      h = canvas.height = canvas.parentElement.offsetHeight;
       const total = Math.min(2200, Math.floor((w * h) / 1100));
       stars = Array.from({ length: total }, (_, i) => {
         const ratio = i / total;
@@ -57,22 +57,41 @@ function StarField() {
         return {
           x: Math.random() * w,
           y: Math.random() * h,
-          r: type === 'tiny' ? Math.random() * 0.65 + 0.15 : type === 'mid' ? Math.random() * 0.8 + 0.7 : Math.random() * 1.2 + 1.2,
-          a: type === 'tiny' ? Math.random() * 0.32 + 0.10 : type === 'mid' ? Math.random() * 0.40 + 0.18 : Math.random() * 0.32 + 0.42,
+          r: type === 'tiny'   ? Math.random() * 0.65 + 0.15
+           : type === 'mid'    ? Math.random() * 0.8  + 0.7
+           :                     Math.random() * 1.2  + 1.2,
+          a: type === 'tiny'   ? Math.random() * 0.32 + 0.10
+           : type === 'mid'    ? Math.random() * 0.40 + 0.18
+           :                     Math.random() * 0.32 + 0.42,
           p: type === 'tiny' ? 0.04 : type === 'mid' ? 0.10 : 0.18,
           phase:   Math.random() * Math.PI * 2,
-          twinkle: type === 'bright' ? Math.random() * 0.018 + 0.01 : Math.random() * 0.008 + 0.003,
+          twinkle: type === 'bright'
+            ? Math.random() * 0.018 + 0.01
+            : Math.random() * 0.008 + 0.003,
         };
       });
     };
 
     const spawnEvent = () => {
       if (Math.random() < 0.55) {
-        events.push({ type: 'shooting', x: Math.random() * w * 0.7, y: Math.random() * h * 0.3,
-          vx: 10 + Math.random() * 6, vy: 3 + Math.random() * 2, life: 0, max: 28 + Math.random() * 12 });
+        events.push({
+          type: 'shooting',
+          x: Math.random() * w * 0.7,
+          y: Math.random() * h * 0.3,
+          vx: 10 + Math.random() * 6,
+          vy: 3  + Math.random() * 2,
+          life: 0,
+          max: 28 + Math.random() * 12,
+        });
       } else {
-        events.push({ type: 'glint', x: Math.random() * w, y: Math.random() * h * 0.55,
-          life: 0, max: 80 + Math.random() * 40, size: 0.8 + Math.random() * 1.4 });
+        events.push({
+          type: 'glint',
+          x: Math.random() * w,
+          y: Math.random() * h * 0.55,
+          life: 0,
+          max: 80 + Math.random() * 40,
+          size: 0.8 + Math.random() * 1.4,
+        });
       }
     };
 
@@ -82,10 +101,14 @@ function StarField() {
         e.life++;
         const t = e.life / e.max;
         if (e.type === 'shooting') {
-          const x = e.x + e.vx * e.life, y = e.y + e.vy * e.life;
+          const x = e.x + e.vx * e.life;
+          const y = e.y + e.vy * e.life;
           ctx.strokeStyle = `rgba(220,235,255,${Math.sin(t * Math.PI) * 0.32})`;
           ctx.lineWidth = 1.1;
-          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 42, y - 14); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 42, y - 14);
+          ctx.stroke();
         } else {
           ctx.beginPath();
           ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
@@ -104,7 +127,6 @@ function StarField() {
       frame++;
       ctx.clearRect(0, 0, w, h);
 
-      // Single continuous gradient for the entire section height
       const bg = ctx.createLinearGradient(0, 0, 0, h);
       bg.addColorStop(0,    PALETTE.bg2);
       bg.addColorStop(0.22, PALETTE.bg1);
@@ -126,7 +148,6 @@ function StarField() {
         ctx.fill();
       });
 
-      // Blue haze — positioned ~70% down (Hero/About boundary zone)
       const haze = ctx.createRadialGradient(w * 0.52, h * 0.70, 0, w * 0.52, h * 0.70, w * 0.55);
       haze.addColorStop(0,   'rgba(77,163,255,0.045)');
       haze.addColorStop(0.5, 'rgba(77,163,255,0.018)');
@@ -142,10 +163,13 @@ function StarField() {
     build(); draw();
     window.addEventListener('resize', build);
     window.addEventListener('mousemove', onMove);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', build); window.removeEventListener('mousemove', onMove); };
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', build);
+      window.removeEventListener('mousemove', onMove);
+    };
   }, []);
 
-  // absolute (not fixed) — fills the full section height
   return <canvas ref={ref} className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }} />;
 }
 
@@ -158,7 +182,6 @@ function GasGiant() {
       transition={{ delay: 0.45, duration: 1.15, ease: [0.16, 1, 0.3, 1] }}
       className="pointer-events-none absolute left-1/2 -translate-x-1/2"
       style={{
-        // top: 60vh means it starts in Hero and the bottom half sits in About
         top: '60vh',
         width:  'clamp(560px, 70vw, 920px)',
         height: 'clamp(560px, 70vw, 920px)',
@@ -185,13 +208,11 @@ function GasGiant() {
         boxShadow: '0 0 120px rgba(77,163,255,0.11), 0 0 220px rgba(77,163,255,0.07)',
       }}
     >
-      {/* Atmosphere rim */}
       <div className="absolute rounded-full" style={{
         inset: '-4%',
         background: 'radial-gradient(circle, transparent 61%, rgba(170,210,255,0.09) 67%, rgba(77,163,255,0.16) 72%, transparent 79%)',
         filter: 'blur(9px)',
       }} />
-      {/* Band shimmer */}
       <div className="absolute inset-0 rounded-full overflow-hidden" style={{
         backgroundImage: `linear-gradient(180deg,
           transparent 0%, rgba(255,255,255,0.04) 7%, transparent 15%,
@@ -200,7 +221,6 @@ function GasGiant() {
           rgba(255,255,255,0.02) 57%, transparent 65%,
           rgba(255,255,255,0.028) 73%, transparent 100%)`,
       }} />
-      {/* Fade all edges into void — kills the hard circle */}
       <div className="absolute inset-0 rounded-full" style={{
         background: `radial-gradient(ellipse 100% 100% at 50% 50%,
           transparent 52%,
@@ -210,7 +230,6 @@ function GasGiant() {
           rgba(3,7,18,1) 100%
         )`,
       }} />
-      {/* Extra bottom fade */}
       <div className="absolute inset-0 rounded-full" style={{
         background: `linear-gradient(180deg,
           transparent 30%,
@@ -229,8 +248,12 @@ function Satellite() {
     <motion.div
       className="pointer-events-none absolute z-[3]"
       initial={{ x: '-12vw', y: '52vh', opacity: 0 }}
-      animate={{ x: ['-12vw','26vw','58vw','102vw'], y: ['52vh','47vh','44vh','40vh'], opacity: [0,0.22,0.24,0] }}
-      transition={{ duration: 22, times: [0,0.2,0.78,1], repeat: Infinity, repeatDelay: 8, ease: 'linear' }}
+      animate={{
+        x: ['-12vw', '26vw', '58vw', '102vw'],
+        y: ['52vh', '47vh', '44vh', '40vh'],
+        opacity: [0, 0.22, 0.24, 0],
+      }}
+      transition={{ duration: 22, times: [0, 0.2, 0.78, 1], repeat: Infinity, repeatDelay: 8, ease: 'linear' }}
     >
       <div className="relative h-[10px] w-[28px]">
         <div className="absolute left-[10px] top-[3px] h-[4px] w-[8px] rounded-full bg-white/35" />
@@ -243,28 +266,27 @@ function Satellite() {
 }
 
 // ── Main export ───────────────────────────────────────────────────
-export default function HeroAbout() {
+export default function Hero() {
   const [ready, setReady] = useState(false);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 60, damping: 20 });
-  const sy = useSpring(y, { stiffness: 60, damping: 20 });
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 60);
-    const move = (e) => { x.set((e.clientX / window.innerWidth - 0.5) * 22); y.set((e.clientY / window.innerHeight - 0.5) * 16); };
+    const move = (e) => {
+      x.set((e.clientX / window.innerWidth  - 0.5) * 22);
+      y.set((e.clientY / window.innerHeight - 0.5) * 16);
+    };
     window.addEventListener('mousemove', move);
     return () => { clearTimeout(t); window.removeEventListener('mousemove', move); };
   }, [x, y]);
 
   return (
-    // ONE section — no boundary between hero and about
     <section
       id="home"
       className="relative w-full text-white overflow-hidden"
       style={{ background: 'transparent' }}
     >
-      {/* Full-section starfield — canvas height = entire section */}
       <StarField />
       <GasGiant />
       <Satellite />
@@ -274,7 +296,8 @@ export default function HeroAbout() {
 
       {/* Corner labels */}
       {NAV_LABELS.map((item, i) => (
-        <motion.div key={item.text}
+        <motion.div
+          key={item.text}
           initial={{ opacity: 0, y: i === 2 ? 10 : -10 }}
           animate={{ opacity: ready ? 0.42 : 0, y: ready ? 0 : i === 2 ? 10 : -10 }}
           transition={{ delay: 0.95 + i * 0.12, duration: 0.7 }}
@@ -282,7 +305,7 @@ export default function HeroAbout() {
         />
       ))}
 
-      {/* ── HERO CONTENT (first viewport) ── */}
+      {/* ── HERO CONTENT ── */}
       <div className="relative z-[7] flex h-screen min-h-[760px] w-full flex-col items-center justify-center px-6 text-center">
         <motion.p
           initial={{ opacity: 0, y: 14 }}
@@ -332,7 +355,7 @@ export default function HeroAbout() {
         </motion.div>
       </div>
 
-      {/* ── ABOUT CONTENT (scrolls below hero, same section) ── */}
+      {/* ── ABOUT CONTENT ── */}
       <div id="about" className="relative z-[7] py-28 px-6">
         <div className="max-w-6xl mx-auto">
 
@@ -378,14 +401,17 @@ export default function HeroAbout() {
 
             {/* Right */}
             <div className="flex flex-col gap-5">
-              {/* Snapshot */}
               <motion.div {...fadeUp(0.1)} className="rounded-sm overflow-hidden"
                 style={{ background: 'rgba(8,14,32,0.65)', border: '1px solid rgba(100,140,190,0.16)', backdropFilter: 'blur(14px)' }}
               >
                 <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(100,140,190,0.1)' }}>
                   <span className="font-mono text-[9px] tracking-[0.38em] uppercase" style={{ color: ICE_DIM }}>SNAPSHOT</span>
-                  <motion.span className="ml-auto w-[5px] h-[5px] rounded-full" style={{ background: GOLD }}
-                    animate={{ opacity: [1,0.2,1] }} transition={{ duration: 2.2, repeat: Infinity }} />
+                  <motion.span
+                    className="ml-auto w-[5px] h-[5px] rounded-full"
+                    style={{ background: GOLD }}
+                    animate={{ opacity: [1, 0.2, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity }}
+                  />
                 </div>
                 <div className="px-5 py-5 flex flex-col gap-5">
                   {SNAPSHOT.map(({ label, value }) => (
@@ -397,7 +423,6 @@ export default function HeroAbout() {
                 </div>
               </motion.div>
 
-              {/* Education */}
               <motion.div {...fadeUp(0.2)} className="rounded-sm overflow-hidden"
                 style={{ background: 'rgba(8,14,32,0.55)', border: '1px solid rgba(100,140,190,0.13)', backdropFilter: 'blur(12px)' }}
               >
@@ -406,7 +431,7 @@ export default function HeroAbout() {
                 </div>
                 <div className="px-5 py-5 flex flex-col gap-5">
                   {[
-                    { degree: 'B.E. Computer Engineering',   inst: 'Mumbai University',       grade: 'CGPA: 7.24', year: 'Graduating July 2026' },
+                    { degree: 'B.E. Computer Engineering',    inst: 'Mumbai University',       grade: 'CGPA: 7.24', year: 'Graduating July 2026' },
                     { degree: 'Diploma Computer Engineering', inst: 'Vidyalankar Polytechnic', grade: '83.71%',     year: 'July 2022' },
                   ].map((edu, i) => (
                     <div key={i} className="pl-4" style={{ borderLeft: '2px solid rgba(100,140,190,0.2)' }}>

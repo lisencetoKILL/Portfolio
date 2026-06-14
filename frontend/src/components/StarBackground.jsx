@@ -1,106 +1,83 @@
 import React, { useEffect, useRef } from 'react';
 
 const StarBackground = ({ speed = 0.05 }) => {
-    const canvasRef = useRef(null);
-    const speedRef = useRef(speed);
-    const targetSpeedRef = useRef(speed);
-    const starsRef = useRef([]);
+  const canvasRef = useRef(null);
+  const speedRef = useRef(speed);
+  const targetSpeedRef = useRef(speed);
+  const starsRef = useRef([]);
 
-    // Listen for direct physics updates from LoadingScreen
-    useEffect(() => {
-        const handleSpeedUpdate = (e) => {
-            targetSpeedRef.current = e.detail;
-        };
-        window.addEventListener('star-speed-update', handleSpeedUpdate);
+  // Sync prop changes to target speed
+  useEffect(() => {
+    targetSpeedRef.current = speed;
+  }, [speed]);
 
-        // Cleanup
-        return () => {
-            window.removeEventListener('star-speed-update', handleSpeedUpdate);
-        };
-    }, []);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
 
-    // Update target speed when prop changes
-    useEffect(() => {
-        targetSpeedRef.current = speed;
-    }, [speed]);
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    };
+    resize();
+    window.addEventListener('resize', resize);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        let width = window.innerWidth;
-        let height = window.innerHeight;
+    if (starsRef.current.length === 0) {
+      starsRef.current = Array.from({ length: 120 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        z: Math.random() * 2 + 0.5,
+        size: Math.random() * 1.5,
+        opacity: Math.random() * 0.5 + 0.2,
+      }));
+    }
 
-        const resize = () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        };
-        resize();
-        window.addEventListener('resize', resize);
+    let animId;
+    const animate = () => {
+      speedRef.current += (targetSpeedRef.current - speedRef.current) * 0.05;
 
-        // Initialize stars ONCE (Persist across re-renders)
-        // Fewer stars for realistic deep space feel (120)
-        if (starsRef.current.length === 0) {
-            starsRef.current = Array.from({ length: 120 }, () => ({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                z: Math.random() * 2 + 0.5, // Depth z-index
-                size: Math.random() * 1.5,
-                opacity: Math.random() * 0.5 + 0.2
-            }));
+      ctx.fillStyle = '#02030A';
+      ctx.fillRect(0, 0, width, height);
+
+      const gradient = ctx.createRadialGradient(
+        width / 2, height / 2, 0,
+        width / 2, height / 2, width * 0.8
+      );
+      gradient.addColorStop(0, 'rgba(20, 30, 60, 0.03)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      starsRef.current.forEach((star) => {
+        star.y += speedRef.current * star.z;
+
+        if (star.y > height) {
+          star.y = -10;
+          star.x = Math.random() * width;
         }
 
-        let animId;
-        const animate = () => {
-            // Smooth Interpolation (Cinematic Ease)
-            // 0.05 factor ensures natural, almost breathing-like transitions
-            speedRef.current += (targetSpeedRef.current - speedRef.current) * 0.05;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(200, 220, 255, ${star.opacity})`;
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-            // Clear Background (Deep Space Black)
-            ctx.fillStyle = "#02030A";
-            ctx.fillRect(0, 0, width, height);
+      animId = requestAnimationFrame(animate);
+    };
 
-            // Subtle Atmosphere Glow (Very faint)
-            const gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, width * 0.8);
-            gradient.addColorStop(0, "rgba(20, 30, 60, 0.03)");
-            gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
+    animId = requestAnimationFrame(animate);
 
-            // Draw Stars
-            starsRef.current.forEach(star => {
-                // Move star
-                star.y += speedRef.current * star.z;
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
 
-                // Reset position if off screen
-                if (star.y > height) {
-                    star.y = -10;
-                    star.x = Math.random() * width;
-                }
-
-                ctx.beginPath();
-                ctx.fillStyle = `rgba(200, 220, 255, ${star.opacity})`;
-
-                // NO WARP EFFECT (Keeping it minimal and elegant)
-                // Just simple circles
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-
-                ctx.fill();
-            });
-
-            animId = requestAnimationFrame(animate);
-        };
-
-        animId = requestAnimationFrame(animate);
-
-        return () => {
-            window.removeEventListener('resize', resize);
-            cancelAnimationFrame(animId);
-        };
-    }, []);
-
-    return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
 };
 
 export default StarBackground;

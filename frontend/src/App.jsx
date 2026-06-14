@@ -1,92 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import Navbar          from './components/Navbar';
-import Hero            from './components/Hero';
-import Skills          from './components/Skills';
-import Experience      from './components/Experience';
-import Projects        from './components/Projects';
-import Achievements    from './components/Achievements';
-import Footer          from './components/Footer';
-import ScrollProgress  from './components/ScrollProgress';
-import LoadingScreen   from './components/LoadingScreen';
-import StarBackground  from './components/StarBackground';
+import React, { useState } from 'react';
+import Navbar from './components/Navbar';
+import HeroAbout from './components/Hero';
+import Skills from './components/Skills';
+import Experience from './components/Experience';
+import Projects from './components/Projects';
+import Achievements from './components/Achievements';
+import Footer from './components/Footer';
+import LoadingScreen from './components/LoadingScreen';
+import StarBackground from './components/StarBackground';
 
-function App() {
-  const location = useLocation();
-  const isHomePage = location.pathname === '/home';
-
-  const [loading, setLoading] = useState(!isHomePage);
-  const [booted, setBooted] = useState(isHomePage);
-  const [starSpeed, setStarSpeed] = useState(0.2);
-  
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) target.scrollIntoView({ behavior: 'smooth' });
-      });
-    });
-  }, []);
-
-  const handleReveal = () => {
-    setBooted(true);
-    if (location.pathname === '/') {
-      navigate('/home', { replace: true });
-    }
-  };
-
-  const handleComplete = () => {
-    setLoading(false);
-  };
+export default function App() {
+  const [loadingDone, setLoadingDone] = useState(false);
+  const [starSpeed, setStarSpeed] = useState(0.05);
 
   return (
-    <div className="bg-[#02030A] min-h-screen text-slate-300 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
-      <StarBackground speed={starSpeed} />
-
-      {/* FIX: Only mount heavy content after booted — prevents GPU contention
-          with the PS5 video decode during the loading sequence */}
-      {booted && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-        >
-          <ScrollProgress />
-          <Navbar visible={booted} />
-
-          <Routes>
-            <Route path="/home" element={
-              <main className="w-full overflow-hidden">
-                <Hero />
-                <Skills />
-                <Experience />
-                <Projects />
-                <Achievements />
-              </main>
-            } />
-            <Route path="/" element={<Navigate to="/home" replace />} />
-          </Routes>
-
-          <Footer />
-        </motion.div>
+    <>
+      {!loadingDone && (
+        <>
+          <StarBackground speed={starSpeed} />
+          <LoadingScreen
+            onComplete={() => setLoadingDone(true)}
+            onSpeedChange={setStarSpeed}
+          />
+        </>
       )}
 
-      <AnimatePresence>
-        {loading && (
-          <LoadingScreen
-            key="ps5-loader"
-            onReveal={handleReveal}
-            onComplete={handleComplete}
-            setStarSpeed={setStarSpeed}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+      {loadingDone && (
+        <div className="relative min-h-screen bg-black text-white overflow-x-hidden">
+          <Navbar />
+          <main>
+            <HeroAbout />
+            <Skills />
+            <Experience />
+            <Projects />
+            <Achievements />
+          </main>
+          <Footer />
+        </div>
+      )}
+    </>
   );
 }
-
-export default App;
